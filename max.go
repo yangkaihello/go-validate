@@ -3,6 +3,7 @@ package validate
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type Max struct {
@@ -53,14 +54,17 @@ func (this *Max) GetErrorMessage() string {
 	if this.message == "" {
 		this.message = "%s超出%s"
 	}
-	return fmt.Sprintf(this.message,this.GetAlias(),this.GetRule())
+
+	var infoSlice = []interface{}{this.GetAlias(),this.GetRule(),this.GetData().(string)}
+	infoSlice = infoSlice[0:strings.Count(this.message,"%s")]
+	return fmt.Sprintf(this.message,infoSlice...)
 }
 
 func (this *Max) Verify() bool {
 	var data = this.GetData()
 	rule,_ := strconv.Atoi(this.GetRule())
 
-	if data.(int) > rule {
+	if data == nil || data.(int) > rule {
 		return false
 	}else{
 		return true

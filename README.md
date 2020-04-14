@@ -32,3 +32,17 @@ if vali.Ok() == false {
     log.Println(vali.GetAllError())
 }
 ```
+
+### 提供验证
+
+```
+require         \\必填
+property:int    \\数据类型 int,string,fooler
+min:0           \\最小整形
+max:99          \\最大整形
+length:10,10    \\字符串长度验证
+ip              \\ipv4数据类型验证
+email           \\邮箱验证
+mobile          \\手机号验证
+url             \\url验证
+```

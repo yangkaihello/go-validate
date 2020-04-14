@@ -2,10 +2,11 @@ package validate
 
 import (
 	"fmt"
+	"net"
 	"strings"
 )
 
-type Require struct {
+type Ip struct {
 	message string
 	alias   string
 	name    string
@@ -13,45 +14,45 @@ type Require struct {
 	data    interface{}
 }
 
-func (this *Require) SetAlias(s string) {
+func (this *Ip) SetAlias(s string) {
 	this.alias = s
 }
 
-func (this *Require) GetAlias() string {
+func (this *Ip) GetAlias() string {
 	return this.alias
 }
 
-func (this *Require) SetName(s string) {
+func (this *Ip) SetName(s string) {
 	this.name = s
 }
 
-func (this *Require) GetName() string {
+func (this *Ip) GetName() string {
 	return this.name
 }
 
-func (this *Require) SetRule(s string) {
+func (this *Ip) SetRule(s string) {
 	this.rule = s
 }
 
-func (this *Require) GetRule() string {
+func (this *Ip) GetRule() string {
 	return this.rule
 }
 
-func (this *Require) SetData(i interface{}) {
+func (this *Ip) SetData(i interface{}) {
 	this.data = i
 }
 
-func (this *Require) GetData() interface{} {
+func (this *Ip) GetData() interface{} {
 	return this.data
 }
 
-func (this *Require) SetErrorMessage(message string) {
+func (this *Ip) SetErrorMessage(message string) {
 	this.message = message
 }
 
-func (this *Require) GetErrorMessage() string {
+func (this *Ip) GetErrorMessage() string {
 	if this.message == "" {
-		this.message = "%s必填"
+		this.message = "%s格式不正确"
 	}
 
 	var infoSlice = []interface{}{this.GetAlias(), this.GetRule(), this.GetData().(string)}
@@ -59,8 +60,11 @@ func (this *Require) GetErrorMessage() string {
 	return fmt.Sprintf(this.message, infoSlice...)
 }
 
-func (this *Require) Verify() bool {
-	if this.GetData() == nil || this.GetData() == "" {
+func (this *Ip) Verify() bool {
+
+	var data = this.GetData()
+	var address = net.ParseIP(data.(string))
+	if data == nil || address == nil {
 		return false
 	} else {
 		return true

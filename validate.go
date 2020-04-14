@@ -13,32 +13,32 @@ type firstError string
 
 func (this *firstError) Get(err map[string]map[string]string) string {
 	if *this != "" {
-		stringSplit := strings.Split(string(*this),":")[0:2]
-		if d,ok := err[stringSplit[0]][stringSplit[1]]; ok {
+		stringSplit := strings.Split(string(*this), ":")[0:2]
+		if d, ok := err[stringSplit[0]][stringSplit[1]]; ok {
 			return d
 		}
 	}
 	return ""
 }
 
-func (this *firstError) Set(name string,rule string) {
+func (this *firstError) Set(name string, rule string) {
 	if *this == "" {
 		*this = firstError(name + ":" + rule)
 	}
 }
 
-func (this *firstError) Del()  {
+func (this *firstError) Del() {
 	*this = ""
 }
 
 type Validate struct {
 	firstErrorName firstError
-	errorMessages map[string]string
-	errorNames map[string]string
-	errors map[string]map[string]string
-	rule map[string]map[string]_interface.Rule
-	ruleTemp map[string]_interface.Rule
-	single *Validate
+	errorMessages  map[string]string
+	errorNames     map[string]string
+	errors         map[string]map[string]string
+	rule           map[string]map[string]_interface.Rule
+	ruleTemp       map[string]_interface.Rule
+	single         *Validate
 }
 
 func (this *Validate) New() *Validate {
@@ -49,25 +49,29 @@ func (this *Validate) New() *Validate {
 	this.single.errorNames = map[string]string{}
 	this.single.errorMessages = map[string]string{}
 
-	this.single.SetRule("require",&Require{})
-	this.single.SetRule("property",&Property{})
-	this.single.SetRule("min",&Min{})
-	this.single.SetRule("max",&Max{})
+	this.single.SetRule("require", &Require{})
+	this.single.SetRule("property", &Property{})
+	this.single.SetRule("min", &Min{})
+	this.single.SetRule("max", &Max{})
+	this.single.SetRule("ip", &Ip{})
+	this.single.SetRule("length", &Length{})
+	this.single.SetRule("email", &Email{})
+	this.single.SetRule("mobile", &Mobile{})
+	this.single.SetRule("url", &Url{})
 	return this
 }
 
-
-func (this *Validate) SetRule(key string,rule _interface.Rule)  {
+func (this *Validate) SetRule(key string, rule _interface.Rule) {
 	this.single.ruleTemp[key] = rule
 }
 
-func (this *Validate) SetMessage(message map[string]string)  {
-	for key,value := range message {
+func (this *Validate) SetMessage(message map[string]string) {
+	for key, value := range message {
 		this.single.errorMessages[key] = value
 	}
 }
 
-func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error {
+func (this *Validate) LoadDate(s interface{}, data map[string]interface{}) error {
 	var typeOf = reflect.TypeOf(s)
 	var valueOf = reflect.Indirect(reflect.ValueOf(s))
 
@@ -78,9 +82,10 @@ func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error 
 	var dataValue interface{}
 	var dataName string
 	var aliasName string
+	var errorTemp string
 	var ok bool
 
-	for i := 0 ; i < typeOfElem.NumField() ; i++  {
+	for i := 0; i < typeOfElem.NumField(); i++ {
 
 		if valueOf.Field(i).Kind() != reflect.String {
 			return errors.New("数据类型只能是string,如果需要验证数据类型请使用property")
@@ -94,18 +99,22 @@ func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error 
 		}
 
 		tagString := typeOfElem.Field(i).Tag.Get(TAG_NAME)
-		tagStrings := strings.Split(tagString,"|")
+		tagStrings := strings.Split(tagString, "|")
 
-		if dataValue,ok = data[dataName]; !ok{
+		if dataValue, ok = data[dataName]; !ok {
 			dataValue = ""
 		}
 
-		for _,value := range tagStrings {
-			rules := strings.Split(value,":")
+		for _, value := range tagStrings {
+			rules := strings.Split(value, ":")
 			ruleName := rules[0]
 
-			if _,ok := this.single.rule[dataName]; !ok {
+			if _, ok := this.single.rule[dataName]; !ok {
 				this.single.rule[dataName] = map[string]_interface.Rule{}
+			}
+
+			if errorTemp, ok = this.single.errorMessages[dataName+":"+ruleName]; !ok {
+				errorTemp = this.single.errorMessages[ruleName]
 			}
 
 			switch len(rules) {
@@ -113,7 +122,7 @@ func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error 
 				ruleInterface := reflect.New(reflect.TypeOf(this.single.ruleTemp[ruleName]).Elem()).Interface()
 				rule := ruleInterface.(_interface.Rule)
 
-				rule.SetErrorMessage(this.single.errorMessages[ruleName])
+				rule.SetErrorMessage(errorTemp)
 				rule.SetAlias(aliasName)
 				rule.SetName(dataName)
 				rule.SetData(dataValue)
@@ -123,7 +132,7 @@ func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error 
 				ruleInterface := reflect.New(reflect.TypeOf(this.single.ruleTemp[ruleName]).Elem()).Interface()
 				rule := ruleInterface.(_interface.Rule)
 
-				rule.SetErrorMessage(this.single.errorMessages[ruleName])
+				rule.SetErrorMessage(errorTemp)
 				rule.SetAlias(aliasName)
 				rule.SetName(dataName)
 				rule.SetData(data[dataName])
@@ -139,13 +148,12 @@ func (this *Validate) LoadDate(s interface{},data map[string]interface{}) error 
 }
 
 func (this *Validate) Ok() bool {
-
-	for name,value := range this.single.rule{
-		for rule,single := range value {
+	for name, value := range this.single.rule {
+		for rule, single := range value {
 			if single.Verify() == false {
 
 				//记录所有错误
-				if _,ok := this.single.errors[name]; !ok{
+				if _, ok := this.single.errors[name]; !ok {
 					this.single.errors[name] = map[string]string{}
 				}
 				this.single.errors[name][rule] = single.GetErrorMessage()
@@ -156,7 +164,7 @@ func (this *Validate) Ok() bool {
 				}
 
 				//第一次错误的时候记录所属键值
-				this.firstErrorName.Set(name,rule)
+				this.firstErrorName.Set(name, rule)
 
 			}
 
@@ -165,7 +173,7 @@ func (this *Validate) Ok() bool {
 
 	if len(this.single.errors) == 0 {
 		return true
-	}else{
+	} else {
 		return false
 	}
 
@@ -182,10 +190,9 @@ func (this *Validate) GetAllError() map[string]string {
 func (this *Validate) GetError(name string) map[string]string {
 	var errors = map[string]string{}
 
-	if d,ok := this.single.errors[name]; ok{
+	if d, ok := this.single.errors[name]; ok {
 		errors = d
 	}
 
 	return errors
 }
-
