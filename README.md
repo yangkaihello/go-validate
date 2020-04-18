@@ -45,4 +45,5 @@ ip              \\ipv4数据类型验证
 email           \\邮箱验证
 mobile          \\手机号验证
 url             \\url验证
+in:git,svn      \\允许的数据
 ```

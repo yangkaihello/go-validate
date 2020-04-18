@@ -58,6 +58,7 @@ func (this *Validate) New() *Validate {
 	this.single.SetRule("email", &Email{})
 	this.single.SetRule("mobile", &Mobile{})
 	this.single.SetRule("url", &Url{})
+	this.single.SetRule("in", &In{})
 	return this
 }
 
